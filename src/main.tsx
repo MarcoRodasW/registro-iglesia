@@ -9,7 +9,7 @@ import "./styles.css";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexQueryClient } from "@convex-dev/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexReactClient } from "convex/react";
 import reportWebVitals from "./reportWebVitals.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
