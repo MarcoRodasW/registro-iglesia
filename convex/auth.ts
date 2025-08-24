@@ -1,5 +1,6 @@
 import Google from "@auth/core/providers/google";
-import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
+import { authTables, convexAuth, getAuthUserId } from "@convex-dev/auth/server";
+import type { Infer } from "convex/values";
 import { query } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
@@ -13,3 +14,6 @@ export const getAuthUser = query({
 		return userId !== null ? ctx.db.get(userId) : null;
 	},
 });
+
+const user = authTables.users.validator;
+export type User = Infer<typeof user>;

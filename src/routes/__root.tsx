@@ -1,3 +1,5 @@
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "@convex-generated/api";
 import { TanstackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
@@ -8,6 +10,12 @@ export type RootContext = {
 };
 
 export const Route = createRootRouteWithContext<RootContext>()({
+	beforeLoad: async ({ context }) => {
+		const data = await context.queryClient.ensureQueryData(
+			convexQuery(api.auth.getAuthUser, {}),
+		);
+		return { data };
+	},
 	component: () => (
 		<>
 			<Outlet />
