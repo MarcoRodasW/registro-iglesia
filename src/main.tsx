@@ -10,6 +10,8 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexQueryClient } from "@convex-dev/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConvexReactClient } from "convex/react";
+import { ConvexError } from "convex/values";
+import { Toaster, toast } from "sonner";
 import reportWebVitals from "./reportWebVitals.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
@@ -19,6 +21,13 @@ const queryClient = new QueryClient({
 		queries: {
 			queryKeyHashFn: convexQueryClient.hashFn(),
 			queryFn: convexQueryClient.queryFn(),
+		},
+		mutations: {
+			onError: (error, variables, context) => {
+				error instanceof ConvexError
+					? toast.error((error.data as { message: string }).message)
+					: toast.error("Error inesperado, por favor notificar");
+			},
 		},
 	},
 });
@@ -50,6 +59,7 @@ if (rootElement && !rootElement.innerHTML) {
 			<ConvexAuthProvider client={convex}>
 				<QueryClientProvider client={queryClient}>
 					<RouterProvider router={router} />
+					<Toaster richColors />
 				</QueryClientProvider>
 			</ConvexAuthProvider>
 		</StrictMode>,
