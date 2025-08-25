@@ -1,10 +1,21 @@
 import Google from "@auth/core/providers/google";
-import { authTables, convexAuth, getAuthUserId } from "@convex-dev/auth/server";
-import type { Infer } from "convex/values";
+import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { query } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 	providers: [Google],
+	callbacks: {
+		afterUserCreatedOrUpdated: async (ctx, { userId, existingUserId }) => {
+			if (existingUserId) return;
+			const existingUsers = await ctx.db.query("users").take(5);
+			if (existingUsers.length === 1) {
+				await ctx.db.patch(userId, { role: "admin" });
+				return;
+			}
+
+			await ctx.db.patch(userId, { role: "user" });
+		},
+	},
 });
 
 export const getAuthUser = query({
@@ -14,6 +25,3 @@ export const getAuthUser = query({
 		return userId !== null ? ctx.db.get(userId) : null;
 	},
 });
-
-const user = authTables.users.validator;
-export type User = Infer<typeof user>;
