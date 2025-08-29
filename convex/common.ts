@@ -1,22 +1,25 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { ConvexError } from "convex/values";
 import {
-	ConvexError,
-	type GenericId,
-	type PropertyValidators,
-} from "convex/values";
-import type { Doc } from "./_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+	customCtx,
+	customMutation,
+	customQuery,
+} from "convex-helpers/server/customFunctions";
+import {
+	type MutationCtx,
+	mutation,
+	type QueryCtx,
+	query,
+} from "./_generated/server";
 
-// Función auxiliar para verificar la autenticación y obtener datos del usuario
+// Helper function to get authenticated user
 async function getUserFromAuth(ctx: QueryCtx | MutationCtx) {
-	const identity = await ctx.auth.getUserIdentity();
-	if (!identity) {
+	const userId = await getAuthUserId(ctx);
+	if (!userId) {
 		throw new ConvexError({ message: "No autenticado", code: 401 });
 	}
-	const [userId] = identity.subject.split("|") as [GenericId<"users">];
-	const user = await ctx.db.get(userId);
 
-	console.log(user);
+	const user = await ctx.db.get(userId);
 	if (!user) {
 		throw new ConvexError({
 			message: "Usuario no encontrado",
@@ -24,39 +27,55 @@ async function getUserFromAuth(ctx: QueryCtx | MutationCtx) {
 		});
 	}
 
+	if (!user.role) {
+		throw new ConvexError({
+			message: "Usuario sin rol asignado",
+			code: 403,
+		});
+	}
+
 	return user;
 }
 
-export function authedMutation<Args = void, Output = void>(config: {
-	args?: PropertyValidators;
-	handler: (
-		ctx: MutationCtx,
-		user: Doc<"users">,
-		args: Args,
-	) => Promise<Output> | Output;
-}) {
-	return mutation({
-		args: config.args,
-		handler: async (ctx, args) => {
-			const user = await getUserFromAuth(ctx);
-			return config.handler(ctx, user, args as Args);
+// Definimos los roles disponibles como una constante para type-safety
+export const ROLES = ["admin", "user", "leader"] as const;
+export type Role = (typeof ROLES)[number];
+
+// Definimos las acciones disponibles
+export const ACTIONS = ["read", "create", "update", "delete"] as const;
+export type Action = (typeof ACTIONS)[number];
+
+// Tipo para los permisos con el método hasPermission incluido
+export type PermissionsManager = {
+	[K in Action]: Role[];
+} & {
+	hasPermission(action: Action, role: Role): boolean;
+};
+
+// Función helper para crear permisos con type-safety
+export function definePermissions<T extends { [K in Action]: Role[] }>(
+	permissions: T,
+): PermissionsManager {
+	return {
+		...permissions,
+		hasPermission(action: Action, role: Role) {
+			return this[action].includes(role);
 		},
-	});
+	};
 }
 
-export function authedQuery<Args = void, Output = void>(config: {
-	args?: PropertyValidators;
-	handler: (
-		ctx: QueryCtx,
-		user: Doc<"users">,
-		args: Args,
-	) => Promise<Output> | Output;
-}) {
-	return query({
-		args: config.args,
-		handler: async (ctx, args) => {
-			const user = await getUserFromAuth(ctx);
-			return config.handler(ctx, user, args as Args);
-		},
-	});
-}
+export const authedQuery = customQuery(
+	query,
+	customCtx(async (ctx) => {
+		const user = await getUserFromAuth(ctx);
+		return { user };
+	}),
+);
+
+export const authedMutation = customMutation(
+	mutation,
+	customCtx(async (ctx) => {
+		const user = await getUserFromAuth(ctx);
+		return { user };
+	}),
+);
