@@ -5,7 +5,7 @@ export const Route = createFileRoute("/_auth/dashboard")({
 });
 
 function RouteComponent() {
-	const { data: user } = Route.useRouteContext();
+	const { user } = Route.useRouteContext();
 
 	return (
 		<div className="h-full w-full">

@@ -1,5 +1,5 @@
 import { Link, type LinkOptions } from "@tanstack/react-router";
-import { Home, type LucideIcon } from "lucide-react";
+import { ContactRound, Home, type LucideIcon, User2Icon } from "lucide-react";
 import type React from "react";
 import {
 	Sidebar,
@@ -26,6 +26,18 @@ const navigationLinks: NavigationLinkOptions[] = [
 		to: "/dashboard",
 		label: "Dashboard",
 		icon: Home,
+		activeOptions: { exact: true },
+	},
+	{
+		to: "/contacts",
+		label: "Contactos",
+		icon: ContactRound,
+		activeOptions: { exact: true },
+	},
+	{
+		to: "/users",
+		label: "Usuarios",
+		icon: User2Icon,
 		activeOptions: { exact: true },
 	},
 ];

@@ -11,10 +11,10 @@ export type RootContext = {
 
 export const Route = createRootRouteWithContext<RootContext>()({
 	beforeLoad: async ({ context }) => {
-		const data = await context.queryClient.ensureQueryData(
+		const user = await context.queryClient.ensureQueryData(
 			convexQuery(api.auth.getAuthUser, {}),
 		);
-		return { data };
+		return { user };
 	},
 	component: () => (
 		<>
