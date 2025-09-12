@@ -6,8 +6,8 @@ import {
 	type RowSelectionState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Download, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { X } from "lucide-react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
 	Table,
 	TableBody,
@@ -22,11 +22,15 @@ import { Checkbox } from "./ui/checkbox";
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
+	onSelectedRowsChange?: (rows: Row<TData>[]) => void;
+	renderActions?: (selectedRows: Row<TData>[]) => ReactNode;
 }
 
 export function DataTable<TData, TValue>({
 	columns,
 	data,
+	onSelectedRowsChange,
+	renderActions,
 }: DataTableProps<TData, TValue>) {
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const columnsWithCheckbox: ColumnDef<TData, TValue>[] = [
@@ -64,6 +68,16 @@ export function DataTable<TData, TValue>({
 			rowSelection,
 		},
 	});
+
+	useEffect(() => {
+		if (onSelectedRowsChange) {
+			// Reference rowSelection so the dependency is meaningful
+			void rowSelection;
+			onSelectedRowsChange(
+				(table.getSelectedRowModel().rows as Row<TData>[]) ?? [],
+			);
+		}
+	}, [rowSelection, onSelectedRowsChange, table]);
 
 	const selectedRowsCount = table.getSelectedRowModel().rows.length;
 
@@ -114,7 +128,11 @@ export function DataTable<TData, TValue>({
 
 			{selectedRowsCount > 0 && (
 				<div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-					<TableActionBar selectedRows={table.getSelectedRowModel().rows} />
+					<TableActionBar
+						selectedRows={table.getSelectedRowModel().rows}
+						renderActions={renderActions}
+						onClearSelection={() => table.resetRowSelection()}
+					/>
 				</div>
 			)}
 		</div>
@@ -123,10 +141,14 @@ export function DataTable<TData, TValue>({
 
 interface TableActionBarProps<TData> {
 	selectedRows: Row<TData>[];
+	renderActions?: (selectedRows: Row<TData>[]) => ReactNode;
+	onClearSelection?: () => void;
 }
 
 export function TableActionBar<TData>({
 	selectedRows,
+	renderActions,
+	onClearSelection,
 }: TableActionBarProps<TData>) {
 	return (
 		<div className="bg-card border rounded-lg shadow-lg px-4 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-2">
@@ -135,22 +157,20 @@ export function TableActionBar<TData>({
 				<Button
 					variant="ghost"
 					size="sm"
-					// onClick={handleClearSelection}
+					onClick={onClearSelection}
 					className="h-6 w-6 p-0"
 				>
 					<X className="h-4 w-4" />
 				</Button>
 			</div>
 			<div className="h-4 w-px bg-border" />
+			{/* Actions */}
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="sm">
-					<Download className="h-4 w-4 mr-2" />
-					Export
-				</Button>
-				<Button variant="destructive" size="sm">
-					<Trash2 className="h-4 w-4 mr-2" />
-					Delete
-				</Button>
+				{renderActions ? (
+					renderActions(selectedRows)
+				) : (
+					<p>No actions available</p>
+				)}
 			</div>
 		</div>
 	);

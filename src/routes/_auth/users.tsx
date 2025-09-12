@@ -8,12 +8,14 @@ import { userTableColumns } from "@/components/pages/users/table-columns";
 export const Route = createFileRoute("/_auth/users")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
-		if (!context.user) {
-			throw redirect({ to: "/login" });
+		if (context.user) {
+			await context.queryClient.ensureQueryData(
+				convexQuery(api.users.getAllUsers, {}),
+			);
+			return;
 		}
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.users.getAllUsers, {}),
-		);
+
+		throw redirect({ to: "/login" });
 	},
 });
 
@@ -21,7 +23,11 @@ function RouteComponent() {
 	const { data } = useSuspenseQuery(convexQuery(api.users.getAllUsers, {}));
 	return (
 		<div>
-			<DataTable columns={userTableColumns} data={data} />
+			<DataTable
+				columns={userTableColumns}
+				data={data}
+				onSelectedRowsChange={(rows) => console.log(rows)}
+			/>
 		</div>
 	);
 }

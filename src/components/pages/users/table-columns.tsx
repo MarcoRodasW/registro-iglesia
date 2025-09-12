@@ -13,5 +13,8 @@ export const userTableColumns: ColumnDef<User>[] = [
 	{
 		accessorKey: "role",
 		header: "Role",
+		cell: ({ row }) => {
+			return <span className="capitalize"> {row.original.role}</span>;
+		},
 	},
 ];
