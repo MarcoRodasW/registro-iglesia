@@ -6,7 +6,7 @@ const user = schema.tables.users.validator;
 export type User = Infer<typeof user>;
 export type UserRoles = User["role"];
 
-export const canMangeUsers = definePermissions({
+export const canManageUsers = definePermissions({
 	create: ["admin"],
 	read: ["admin", "leader"],
 	update: ["admin"],
@@ -15,7 +15,7 @@ export const canMangeUsers = definePermissions({
 
 export const getAllUsers = authedQuery({
 	handler: async ({ db, user }) => {
-		if (!canMangeUsers.hasPermission("read", user.role!)) {
+		if (!canManageUsers.hasPermission("read", user.role!)) {
 			throw new ConvexError({
 				message: "No tienes permiso para ver usuarios",
 				code: 403,
