@@ -13,11 +13,14 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "./ui/sidebar";
+import { useCurrentUser } from "@/hooks/use-permissions";
+import { canAccessRoute, type RouteKey } from "@/lib/route-permissions";
 
 // Extend LinkOptions to include additional navigation properties
 type NavigationLinkOptions = LinkOptions & {
 	label: string;
 	icon: LucideIcon;
+	routeKey: RouteKey;
 };
 
 // Define typesafe navigation links array
@@ -26,18 +29,21 @@ const navigationLinks: NavigationLinkOptions[] = [
 		to: "/dashboard",
 		label: "Dashboard",
 		icon: Home,
+		routeKey: "dashboard",
 		activeOptions: { exact: true },
 	},
 	{
 		to: "/contacts",
 		label: "Contactos",
 		icon: ContactRound,
+		routeKey: "contacts",
 		activeOptions: { exact: true },
 	},
 	{
 		to: "/users",
 		label: "Usuarios",
 		icon: User2Icon,
+		routeKey: "users",
 		activeOptions: { exact: true },
 	},
 ];
@@ -45,6 +51,15 @@ const navigationLinks: NavigationLinkOptions[] = [
 export default function AppSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
+	const { userRole, isLoading } = useCurrentUser();
+
+	// Filter navigation links based on user permissions
+	const visibleLinks = navigationLinks.filter((link) => {
+		// Show loading state or hide links if user role is not available
+		if (isLoading || !userRole) return false;
+		return canAccessRoute(link.routeKey, userRole);
+	});
+
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
@@ -57,7 +72,7 @@ export default function AppSidebar({
 					<SidebarGroupLabel>Navigation</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{navigationLinks.map((linkOption) => {
+							{visibleLinks.map((linkOption) => {
 								const Icon = linkOption.icon;
 								return (
 									<SidebarMenuItem key={linkOption.to}>
